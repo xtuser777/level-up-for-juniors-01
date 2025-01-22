@@ -51,3 +51,9 @@ Leia o arquivo [requisitos-sistema.md](./requisitos-sistema.md) para entender o 
 * Docker [https://www.docker.com/](https://www.docker.com/)
 * Tutorial do WSL + Docker [https://github.com/codeedu/wsl2-docker-quickstart]
 * Minhas configurações do VSCode [https://github.com/argentinaluiz/my-vscode-settings](https://github.com/argentinaluiz/my-vscode-settings)
+
+## Sugestão de livros
+
+* [Clean Code](https://www.amazon.com.br/Clean-Code-Handbook-Software-Craftsmanship/dp/0132350882)
+* [Clean Architecture](https://www.amazon.com.br/Clean-Architecture-Craftsmans-Software-Structure/dp/0134494164)
+* [Patterns of Enterprise Application Architecture](https://www.amazon.com.br/Patterns-Enterprise-Application-Architecture-Martin/dp/0321127420)
