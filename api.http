@@ -101,8 +101,25 @@ Authorization: Bearer {{ tokenPartner1 }}
     "price": 100
 }
 
+### (poderia trabalhar com paginação)
+GET http://localhost:3000/events/1/tickets
+
+###
+GET http://localhost:3000/events/1/tickets/1
+
 ### Listagem de eventos
 GET http://localhost:3000/events
 
 ### Listagem de um evento
 GET http://localhost:3000/events/1
+
+###
+POST http://localhost:3000/purchases
+Content-Type: application/json
+Authorization: Bearer {{ tokenCustomer1 }}
+
+{
+    "ticket_ids": [1],
+    "card_token": "tok_visa"
+}
+
