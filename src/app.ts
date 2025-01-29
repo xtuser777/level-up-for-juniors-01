@@ -10,9 +10,6 @@ import { ticketRoutes } from "./controller/ticket-controller";
 import { purchaseRoutes } from "./controller/purchase-controller";
 
 
-//Model View Controller - Arquitetura camadas
-//Middleware
-
 export const app = express();
 
 app.use(express.json());
@@ -50,7 +47,7 @@ app.use(async (req, res, next) => {
       res.status(401).json({ message: "Failed to authenticate token" });
       return;
     }
-    req.user = user as { id: number; email: string };
+    req.user = user as { id: string; email: string };
     next();
   } catch (error) {
     res.status(401).json({ message: "Failed to authenticate token" });
@@ -82,10 +79,3 @@ app.listen(3000, async () => {
   await connection.execute("SET FOREIGN_KEY_CHECKS = 1");
   console.log("Running in http://localhost:3000");
 });
-
-
-//MVC - Model View Controller (Arquitetura em camadas)
-
-//Application Service - o que eu quero expor como regras cruciais da aplicação
-//Domain Service - Criptografar senha
-//Active Record - Encapsular lógica de arma. e de negócio

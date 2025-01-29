@@ -1,5 +1,6 @@
-import { PoolConnection, ResultSetHeader, RowDataPacket } from "mysql2/promise";
-import { Database } from "../database";
+type ReservationTicketProps = Omit<ReservationTicketModel, 'update'>;
+type CreateReservationTicketProps = Omit<ReservationTicketProps, 'id'>;
+type UpdateReservationTicketProps = Omit<ReservationTicketProps, 'id'>;
 
 export enum ReservationStatus {
   reserved = "reserved",
@@ -7,87 +8,40 @@ export enum ReservationStatus {
 }
 
 export class ReservationTicketModel {
-  id: number;
-  customer_id: number;
-  ticket_id: number;
-  reservation_date: Date;
+  id: string;
+  customerId: string;
+  ticketId: string;
+  reservationDate: Date;
   status: ReservationStatus;
 
-  constructor(data: Partial<ReservationTicketModel> = {}) {
-    this.fill(data);
+  private constructor(data: ReservationTicketProps) {
+    Object.assign(this, data);
   }
 
-  static async create(
-    data: {
-      customer_id: number;
-      ticket_id: number;
-      status: ReservationStatus;
-    },
-    options?: { connection?: PoolConnection }
-  ): Promise<ReservationTicketModel> {
-    const db = options?.connection ?? Database.getInstance();
-    const reservation_date = new Date();
-    const [result] = await db.execute<ResultSetHeader>(
-      "INSERT INTO reservation_tickets (customer_id, ticket_id, status, reservation_date) VALUES (?, ?, ?, ?)",
-      [data.customer_id, data.ticket_id, data.status, reservation_date]
-    );
+  static create(props: CreateReservationTicketProps): ReservationTicketModel {
+    const reservationDate = new Date();
+    
     const reservation = new ReservationTicketModel({
-      ...data,
-      reservation_date,
-      id: result.insertId,
+      ...props,
+      reservationDate,
+      id: crypto.randomUUID(),
     });
+
     return reservation;
   }
 
-  static async findById(id: number): Promise<ReservationTicketModel | null> {
-    const db = Database.getInstance();
-    const [rows] = await db.execute<RowDataPacket[]>(
-      "SELECT * FROM reservation_tickets WHERE id = ?",
-      [id]
-    );
-    return rows.length
-      ? new ReservationTicketModel(rows[0] as ReservationTicketModel)
-      : null;
+  static load(props: ReservationTicketProps): ReservationTicketModel {
+    const reservation = new ReservationTicketModel({
+      ...props,
+    });
+
+    return reservation;
   }
 
-  static async findAll(): Promise<ReservationTicketModel[]> {
-    const db = Database.getInstance();
-    const [rows] = await db.execute<RowDataPacket[]>(
-      "SELECT * FROM reservation_tickets"
-    );
-    return rows.map(
-      (row) => new ReservationTicketModel(row as ReservationTicketModel)
-    );
-  }
-
-  async update(options?: { connection?: PoolConnection }): Promise<void> {
-    const db = options?.connection ?? Database.getInstance();
-    const [result] = await db.execute<ResultSetHeader>(
-      "UPDATE reservation_tickets SET customer_id = ?, ticket_id = ?, status = ? WHERE id = ?",
-      [this.customer_id, this.ticket_id, this.status, this.id]
-    );
-    if (result.affectedRows === 0) {
-      throw new Error("Reservation not found");
-    }
-  }
-
-  async delete(): Promise<void> {
-    const db = Database.getInstance();
-    const [result] = await db.execute<ResultSetHeader>(
-      "DELETE FROM reservation_tickets WHERE id = ?",
-      [this.id]
-    );
-    if (result.affectedRows === 0) {
-      throw new Error("Reservation not found");
-    }
-  }
-
-  fill(data: Partial<ReservationTicketModel>): void {
-    if (data.id !== undefined) this.id = data.id;
-    if (data.customer_id !== undefined) this.customer_id = data.customer_id;
-    if (data.ticket_id !== undefined) this.ticket_id = data.ticket_id;
-    if (data.reservation_date !== undefined)
-      this.reservation_date = data.reservation_date;
-    if (data.status !== undefined) this.status = data.status;
+  update(props: UpdateReservationTicketProps): void {
+    if (props.customerId !== undefined) this.customerId = props.customerId;
+    if (props.ticketId !== undefined) this.ticketId = props.ticketId;
+    if (props.reservationDate !== undefined) this.reservationDate = props.reservationDate;
+    if (props.status !== undefined) this.status = props.status;
   }
 }

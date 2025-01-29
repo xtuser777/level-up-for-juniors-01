@@ -2,23 +2,40 @@ import { PurchaseModel, PurchaseStatus } from "../models/purchase-model";
 import { TicketModel, TicketStatus } from "../models/ticket-model";
 import { PurchaseTicketModel } from "../models/purchase-ticket-model";
 import { PaymentService } from "./payment-service";
-import { CustomerModel } from "../models/customer-model";
 import {
   ReservationStatus,
   ReservationTicketModel,
 } from "../models/reservation-ticket-model";
 import { Database } from "../database";
+import { CustomersRepository } from "../repositories/customers-repository";
+import { TicketsRepository } from "../repositories/tickets-repository";
+import { PurchasesRepository } from "../repositories/purchases-repository";
+import { ReservationsTicketsRepository } from "../repositories/reservations-tickets-repository";
+import { PurchasesTicketsRepository } from "../repositories/purchases-tickets-repository";
 
 export class PurchaseService {
-  constructor(private paymentService: PaymentService) {}
+  private paymentService: PaymentService;
+  private customersRepository: CustomersRepository;
+  private ticketsRepository: TicketsRepository;
+  private purchasesRepository: PurchasesRepository;
+  private reservationsTicketsRepository: ReservationsTicketsRepository;
+  private purchasesTicketsRepository: PurchasesTicketsRepository;
+
+  constructor() {
+    this.customersRepository = new CustomersRepository();
+    this.ticketsRepository = new TicketsRepository();
+    this.purchasesRepository = new PurchasesRepository();
+    this.reservationsTicketsRepository = new ReservationsTicketsRepository();
+    this.purchasesTicketsRepository = new PurchasesTicketsRepository();
+  }
 
   async create(data: {
-    customerId: number;
-    ticketIds: number[];
+    customerId: string;
+    ticketIds: string[];
     cardToken: string;
-  }): Promise<number> {
+  }): Promise<string> {
 
-    const customer = await CustomerModel.findById(data.customerId, {
+    const customer = await this.customersRepository.findById(data.customerId, {
       user: true, //eager loading
     });
 
@@ -26,7 +43,7 @@ export class PurchaseService {
       throw new Error("Customer not found");
     }
 
-    const tickets = await TicketModel.findAll({
+    const tickets = await this.ticketsRepository.findAll({
       where: { ids: data.ticketIds },
     });
 
@@ -47,14 +64,16 @@ export class PurchaseService {
     try {
       await connection.beginTransaction();
 
-      purchase = await PurchaseModel.create(
+      purchase = PurchaseModel.create(
         {
-          customer_id: data.customerId,
-          total_amount: amount,
+          customerId: data.customerId,
+          totalAmount: amount,
+          purchaseDate: new Date(),
           status: PurchaseStatus.pending,
-        },
-        { connection }
+        }
       );
+
+      await this.purchasesRepository.create(purchase, connection);
 
       await this.associateTicketsWithPurchase(
         purchase.id,
@@ -73,16 +92,19 @@ export class PurchaseService {
     try {
       await connection.beginTransaction();
 
-      purchase.status = PurchaseStatus.paid;
-      await purchase.update({ connection });
-      await ReservationTicketModel.create(
+      purchase.update({ status: PurchaseStatus.paid});
+      await this.purchasesRepository.update(purchase, connection);
+
+      const reservationTicket = ReservationTicketModel.create(
         {
-          customer_id: data.customerId,
-          ticket_id: data.ticketIds[0],
+          customerId: data.customerId,
+          ticketId: data.ticketIds[0],
+          reservationDate: new Date(),
           status: ReservationStatus.reserved,
-        },
-        { connection }
+        }
       );
+
+      await this.reservationsTicketsRepository.create(reservationTicket, connection)
 
       await this.paymentService.processPayment(
         {
@@ -91,7 +113,7 @@ export class PurchaseService {
           address: customer.address,
           phone: customer.phone,
         },
-        purchase!.total_amount,
+        purchase!.totalAmount,
         data.cardToken
       );
 
@@ -99,8 +121,8 @@ export class PurchaseService {
       return purchase.id;
     } catch (error) {
       await connection.rollback();
-      purchase.status = PurchaseStatus.error;
-      await purchase.update({ connection });
+      purchase.update({ status: PurchaseStatus.error });
+      await this.purchasesRepository.update(purchase, connection);
       throw error;
     } finally {
       connection.release();
@@ -108,18 +130,18 @@ export class PurchaseService {
   }
 
   private async associateTicketsWithPurchase(
-    purchaseId: number,
-    ticketIds: number[],
+    purchaseId: string,
+    ticketIds: string[],
     connection: any
   ): Promise<void> {
-    const purchaseTickets = ticketIds.map((ticketId) => ({
-      purchase_id: purchaseId,
-      ticket_id: ticketId,
+    const purchaseTickets = ticketIds.map((ticketId) => PurchaseTicketModel.create({
+      purchaseId: purchaseId,
+      ticketId: ticketId,
     }));
-    await PurchaseTicketModel.createMany(purchaseTickets, { connection });
+    await this.purchasesTicketsRepository.createMany(purchaseTickets, connection);
   }
 
   async findById(id: number): Promise<PurchaseModel | null> {
-    return PurchaseModel.findById(id);
+    return this.purchasesRepository.findById(id);
   }
 }

@@ -1,13 +1,22 @@
-import { EventModel } from "../models/event-model";
 import { TicketModel, TicketStatus } from "../models/ticket-model";
+import { EventsRepository } from "../repositories/events-repository";
+import { TicketsRepository } from "../repositories/tickets-repository";
 
 export class TicketService {
+  private eventsRepository: EventsRepository;
+  private ticketsRepository: TicketsRepository;
+
+  constructor() {
+    this.eventsRepository = new EventsRepository();
+    this.ticketsRepository = new TicketsRepository();
+  }
+
   async createMany(data: {
-    eventId: number;
+    eventId: string;
     numTickets: number;
     price: number;
   }) {
-    const event = await EventModel.findById(data.eventId);
+    const event = await this.eventsRepository.findById(data.eventId);
 
     if (!event) {
       throw new Error("Event not Found");
@@ -15,28 +24,28 @@ export class TicketService {
 
     const ticketsData = Array(data.numTickets)
       .fill({})
-      .map((_, index) => ({
+      .map((_, index) => TicketModel.create({
         location: `Location ${index}`,
-        event_id: event.id,
+        eventId: event.id,
         price: data.price,
         status: TicketStatus.available,
       }));
 
-    await TicketModel.createMany(ticketsData);
+    await this.ticketsRepository.createMany(ticketsData);
   }
 
-  async findByEventId(eventId: number) {
-    const event = await EventModel.findById(eventId);
+  async findByEventId(eventId: string) {
+    const event = await this.eventsRepository.findById(eventId);
 
     if (!event) {
       throw new Error("Event not Found");
     }
 
-    return TicketModel.findAll({ where: { event_id: eventId } });
+    return this.ticketsRepository.findAll({ where: { event_id: eventId } });
   }
 
-  async findById(eventId: number, ticketId: number) {
-    const ticket = await TicketModel.findById(ticketId);
-    return ticket && ticket.event_id === eventId ? ticket : null;
+  async findById(eventId: string, ticketId: string) {
+    const ticket = await this.ticketsRepository.findById(ticketId);
+    return ticket && ticket.eventId === eventId ? ticket : null;
   }
 }

@@ -1,8 +1,18 @@
 import { UserModel } from "../models/user-model";
 import { Database } from "../database";
 import { CustomerModel } from "../models/customer-model";
+import { CustomersRepository } from "../repositories/customers-repository";
+import { UsersRepository } from "../repositories/users-repository";
 
 export class CustomerService {
+  private customersRepository: CustomersRepository;
+  private usersRepository: UsersRepository;
+
+  constructor() {
+    this.customersRepository = new CustomersRepository();
+    this.usersRepository = new UsersRepository();
+  }
+
   async register(data: {
     name: string;
     email: string;
@@ -13,49 +23,45 @@ export class CustomerService {
     const { name, email, password, address, phone } = data;
 
     const connection = await Database.getInstance().getConnection();
+
     try {
       await connection.beginTransaction();
-      const user = await UserModel.create(
-        {
-          name,
-          email,
-          password,
-        },
-        { connection }
-      );
-      const customer = await CustomerModel.create(
-        {
-          user_id: user.id,
-          address,
-          phone,
-        },
-        { connection }
-      );
+
+      const user = UserModel.create({
+        name,
+        email,
+        password,
+      });
+
+      const customer = CustomerModel.create({
+        userId: user.id,
+        address,
+        phone,
+      });
+
+      await this.usersRepository.create(user, connection);
+
+      await this.customersRepository.create(customer, connection);
+
       await connection.commit();
+
       return {
         id: customer.id,
         name,
-        user_id: user.id,
+        userId: user.id,
         address,
         phone,
-        created_at: customer.created_at,
+        createdAt: customer.createdAt,
       };
     } catch (e) {
       await connection.rollback();
       throw e;
     } finally {
-      await connection.release();
+      connection.release();
     }
   }
 
   async findByUserId(userId: number): Promise<CustomerModel | null> {
-    return CustomerModel.findByUserId(userId, { user: true });
+    return this.customersRepository.findByUserId(userId, { user: true });
   }
 }
-
-// auto commit - insert, update, delete
-// transaction
-//init
-//N transaction
-//commit
-//rollback

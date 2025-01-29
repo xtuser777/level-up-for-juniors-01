@@ -1,17 +1,17 @@
-import * as mysql from "mysql2/promise";
-import { Database } from "../database";
-import { UserModel } from "../models/user-model";
+import { UsersRepository } from "../repositories/users-repository";
 
 export class UserService {
+  private usersRepository: UsersRepository;
+  
+  constructor() {
+    this.usersRepository = new UsersRepository();
+  }
 
   async findById(userId: number) {
-    return UserModel.findById(userId);
+    return this.usersRepository.findById(userId);
   }
 
   async findByEmail(email: string) {
-    return UserModel.findByEmail(email);
+    return this.usersRepository.findByEmail(email);
   }
 }
-
-
-//design pattern - 

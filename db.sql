@@ -1,7 +1,7 @@
 use tickets;
 
 CREATE TABLE IF NOT EXISTS `users` (
-  `id` INT NOT NULL AUTO_INCREMENT,
+  `id` VARCHAR(255) NOT NULL UNIQUE,
   `name` VARCHAR(255) NOT NULL,
   `email` VARCHAR(255) NOT NULL UNIQUE,
   `password` VARCHAR(255) NOT NULL,
@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS `users` (
 ENGINE = InnoDB;
 
 CREATE TABLE IF NOT EXISTS `partners` (
-  `id` INT NOT NULL AUTO_INCREMENT,
+  `id` VARCHAR(255) NOT NULL UNIQUE,
   `company_name` VARCHAR(255) NOT NULL,
   `created_at` TIMESTAMP NOT NULL,
   `user_id` INT NOT NULL,
@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS `partners` (
 ENGINE = InnoDB;
 
 CREATE TABLE IF NOT EXISTS `customers` (
-  `id` INT NOT NULL AUTO_INCREMENT,
+  `id` VARCHAR(255) NOT NULL UNIQUE,
   `address` VARCHAR(255) NOT NULL,
   `phone` VARCHAR(255) NOT NULL,
   `created_at` TIMESTAMP NOT NULL,
@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS `customers` (
 ENGINE = InnoDB;
 
 CREATE TABLE IF NOT EXISTS `events` (
-  `id` INT NOT NULL AUTO_INCREMENT,
+  `id` VARCHAR(255) NOT NULL UNIQUE,
   `name` VARCHAR(255) NOT NULL,
   `description` VARCHAR(255) NULL,
   `date` TIMESTAMP NOT NULL,
@@ -56,7 +56,7 @@ CREATE TABLE IF NOT EXISTS `events` (
 ENGINE = InnoDB;
 
 CREATE TABLE IF NOT EXISTS `tickets` (
-  `id` INT NOT NULL AUTO_INCREMENT,
+  `id` VARCHAR(255) NOT NULL UNIQUE,
   `location` VARCHAR(45) NOT NULL,
   `price` DECIMAL(10,2) NOT NULL,
   `status` ENUM('available', 'sold') NOT NULL,
@@ -72,7 +72,7 @@ CREATE TABLE IF NOT EXISTS `tickets` (
 ENGINE = InnoDB;
 
 CREATE TABLE IF NOT EXISTS `purchases` (
-  `id` INT NOT NULL AUTO_INCREMENT,
+  `id` VARCHAR(255) NOT NULL UNIQUE,
   `purchase_date` TIMESTAMP NOT NULL,
   `total_amount` DECIMAL(10,2) NOT NULL,
   `status` ENUM('pending', 'paid', 'error', 'cancelled') NOT NULL,
@@ -87,7 +87,7 @@ CREATE TABLE IF NOT EXISTS `purchases` (
 ENGINE = InnoDB;
 
 CREATE TABLE IF NOT EXISTS `purchase_tickets` (
-  `id` INT NOT NULL AUTO_INCREMENT,
+  `id` VARCHAR(255) NOT NULL UNIQUE,
   `purchase_id` INT NOT NULL,
   `ticket_id` INT NOT NULL,
   PRIMARY KEY (`id`),
@@ -106,7 +106,7 @@ CREATE TABLE IF NOT EXISTS `purchase_tickets` (
 ENGINE = InnoDB;
 
 CREATE TABLE IF NOT EXISTS `reservation_tickets` (
-  `id` INT NOT NULL AUTO_INCREMENT,
+  `id` VARCHAR(255) NOT NULL UNIQUE,
   `reservation_date` TIMESTAMP NOT NULL,
   `status` ENUM('reserved', 'cancelled') NOT NULL,
   `reserved_ticket_id` INT GENERATED ALWAYS AS (CASE WHEN status = 'reserved' THEN ticket_id ELSE NULL END) VIRTUAL,

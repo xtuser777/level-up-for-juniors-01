@@ -1,54 +1,67 @@
 import { Database } from "../database";
 import { UserModel } from "../models/user-model";
 import { PartnerModel } from "../models/partner-model";
+import { PartnersRepository } from "../repositories/partners-repository";
+import { UsersRepository } from "../repositories/users-repository";
 
 export class PartnerService {
+  private usersRepository: UsersRepository;
+  private partnersRepository: PartnersRepository;
+
+  constructor() { 
+    this.usersRepository = new UsersRepository();
+    this.partnersRepository = new PartnersRepository();
+  }
+
   async register(data: {
     name: string;
     email: string;
     password: string;
-    company_name: string;
+    companyName: string;
   }) {
-    const { name, email, password, company_name } = data;
+    const { name, email, password, companyName } = data;
 
     const connection = await Database.getInstance().getConnection();
+
     try {
       await connection.beginTransaction();
 
-      const user = await UserModel.create(
+      const user = UserModel.create(
         {
           name,
           email,
           password,
-        },
-        { connection }
+        }
       );
 
-      const partner = await PartnerModel.create(
+      const partner = PartnerModel.create(
         {
-          company_name,
-          user_id: user.id,
-        },
-        { connection }
+          companyName,
+          userId: user.id,
+        }
       );
+
+      await this.usersRepository.create(user, connection);
+
+      await this.partnersRepository.create(partner, connection);
 
       await connection.commit();
       return {
         id: partner.id,
         name,
-        user_id: user.id,
-        company_name,
-        created_at: partner.created_at,
+        userId: user.id,
+        companyName,
+        created_at: partner.createdAt,
       };
     } catch (e) {
       await connection.rollback();
       throw e;
     } finally {
-      await connection.release();
+      connection.release();
     }
   }
 
   async findByUserId(userId: number) {
-    return PartnerModel.findByUserId(userId);
+    return this.partnersRepository.findByUserId(userId);
   }
 }
